@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Actividad Física</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-image: url('fondo2.jpg');
+      background-size: cover;
+      background-position: center;
+      backdrop-filter: blur(4px);
+      color: #fff;
+    }
+
+    header {
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 20px;
+      text-align: center;
+      font-size: 1.8em;
+      font-weight: 600;
+    }
+
+    main {
+      padding: 30px;
+      max-width: 1000px;
+      margin: auto;
+      background-color: rgba(0, 0, 0, 0.6);
+      border-radius: 20px;
+    }
+
+    input, button, select {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1em;
+      margin: 5px 0;
+    }
+
+    .form-section, .search-section {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    button {
+      background-color: #00c897;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #009e75;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+
+    th {
+      background-color: rgba(0, 200, 151, 0.6);
+    }
+
+    .edit-btn, .delete-btn {
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .edit-btn {
+      background-color: #ffc107;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <header>Registro Diario de Actividad Física</header>
+  <main>
+    <section class="search-section">
+      <label for="search">Buscar paciente por código:</label>
+      <input list="pacientes" type="text" id="search" placeholder="Ej: A001" />
+      <datalist id="pacientes">
+        <option value="A001"></option>
+        <option value="A002"></option>
+        <option value="A003"></option>
+        <option value="A004"></option>
+        <option value="A005"></option>
+        <option value="A006"></option>
+        <option value="A007"></option>
+        <option value="A008"></option>
+        <option value="A009"></option>
+        <option value="A010"></option>
+      </datalist>
+      <button onclick="buscarPaciente()">Buscar</button>
+    </section>
+
+    <section class="form-section">
+      <label for="codigo">Código del paciente:</label>
+      <input type="text" id="codigo" />
+
+      <label for="fecha">Fecha:</label>
+      <input type="date" id="fecha" />
+
+      <label for="pasos">Pasos caminados:</label>
+      <input type="number" id="pasos" />
+
+      <label for="minutos">Minutos caminados:</label>
+      <input type="number" id="minutos" />
+
+      <button onclick="guardarRegistro()">Guardar registro</button>
+    </section>
+
+    <section>
+      <h3>Historial de paciente</h3>
+      <table id="tabla">
+        <thead>
+          <tr>
+            <th>Paciente</th>
+            <th>Fecha</th>
+            <th>Pasos</th>
+            <th>Minutos</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    let registros = JSON.parse(localStorage.getItem('registros')) || {};
+    let pacienteActual = '';
+
+    function buscarPaciente() {
+      const codigo = document.getElementById('search').value.trim();
+      pacienteActual = codigo;
+      mostrarRegistros();
+    }
+
+    function guardarRegistro() {
+      const codigo = document.getElementById('codigo').value.trim();
+      const fecha = document.getElementById('fecha').value;
+      const pasos = parseInt(document.getElementById('pasos').value);
+      const minutos = parseInt(document.getElementById('minutos').value);
+
+      if (!codigo || !fecha || isNaN(pasos) || isNaN(minutos)) {
+        alert('Por favor llena todos los campos');
+        return;
+      }
+
+      if (!/^A00[1-9]|A010$/.test(codigo)) {
+        alert('El código del paciente debe estar entre A001 y A010');
+        return;
+      }
+
+      if (!registros[codigo]) registros[codigo] = [];
+
+      const repetido = registros[codigo].some(r => r.pasos === pasos && r.minutos === minutos);
+      if (repetido) {
+        alert('Ya existe un registro con estos mismos pasos y minutos para este paciente. Modifica alguno.');
+        return;
+      }
+
+      registros[codigo].push({ fecha, pasos, minutos });
+      localStorage.setItem('registros', JSON.stringify(registros));
+
+      pacienteActual = codigo;
+      mostrarRegistros();
+    }
+
+    function mostrarRegistros() {
+      const tbody = document.querySelector('#tabla tbody');
+      tbody.innerHTML = '';
+
+      if (!registros[pacienteActual]) return;
+
+      registros[pacienteActual].forEach((r, i) => {
+        const estado = (r.pasos >= 5000 && r.minutos >= 60) ? '✅ Cumple' : '❌ No cumple';
+        const fila = `<tr>
+          <td>${pacienteActual}</td>
+          <td>${r.fecha}</td>
+          <td>${r.pasos}</td>
+          <td>${r.minutos}</td>
+          <td>${estado}</td>
+          <td>
+            <button class="edit-btn" onclick="editar(${i})">Editar</button>
+            <button class="delete-btn" onclick="eliminar(${i})">Borrar</button>
+          </td>
+        </tr>`;
+        tbody.innerHTML += fila;
+      });
+    }
+
+    function eliminar(index) {
+      registros[pacienteActual].splice(index, 1);
+      localStorage.setItem('registros', JSON.stringify(registros));
+      mostrarRegistros();
+    }
+
+    function editar(index) {
+      const r = registros[pacienteActual][index];
+      document.getElementById('codigo').value = pacienteActual;
+      document.getElementById('fecha').value = r.fecha;
+      document.getElementById('pasos').value = r.pasos;
+      document.getElementById('minutos').value = r.minutos;
+      eliminar(index);
+    }
+  </script>
+</body>
+</html>
